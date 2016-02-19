@@ -9,6 +9,7 @@ const config = {
 const options = require('command-line-args')([
     { name: 'command', type: String, multiple: true, defaultOption: true }
 ]).parse();
+
 const action = options.command.pop();
 const packageName = options.command.pop();
 
