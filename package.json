@@ -6,7 +6,7 @@
     "build": "tsc || exit 0"
   },
   "bin": {
-    "sln": "dist/bin/index.js"
+    "sln": "bin/index.js"
   },
   "author": "",
   "license": "ISC",

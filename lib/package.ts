@@ -1,6 +1,6 @@
 /// <reference path="../typings/main.d.ts" />
 
-import npm = require('npm');
+import npm = require('npm'); 
 const path = require('path');
 
 export default class Package {
