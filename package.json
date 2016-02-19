@@ -1,0 +1,21 @@
+{
+  "name": "sln",
+  "version": "1.0.0",
+  "description": "An npm local depedency manager",
+  "scripts": {
+    "build": "tsc || exit 0"
+  },
+  "bin": {
+    "sln": "dist/bin/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "command-line-args": "^2.1.6",
+    "npm": "^3.7.3"
+  },
+  "devDependencies": {
+    "tsc": "^1.20150623.0",
+    "typings": "^0.6.8"
+  }
+}
