@@ -16,11 +16,11 @@ const packageName = options.command.pop();
 console.info('Running', action, 'on', packageName, '...');
 
 var sln = new Sln(packageName);
-sln.run(action)
+sln[action]()
     .then(() => {
         console.info('Run', action, 'successfully');
     })
     .catch((err) => {
-        console.error('Failed to run', action);
+        console.error('Failed to run', action, err);
         process.exit(1);
     })

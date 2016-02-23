@@ -1,9 +1,12 @@
 /// <reference path="../typings/main.d.ts" />
 
 import Package from './package';
+import INpmAction from './INpmAction';
+
 const path = require('path'),
     fs = require('fs'),
     async = require('async-q'),
+    child = require('child_process'),
     tsort = require('tsort');
 
 function getDirectories(dir): Array<string> {
@@ -12,7 +15,7 @@ function getDirectories(dir): Array<string> {
   });
 }
 
-export default class Sln {
+export default class Sln implements INpmAction {
 
     constructor(
         private _mainPackageName: string = '',
@@ -20,8 +23,9 @@ export default class Sln {
 
     private _packages: any = {};
     private _packagesDir: string = path.join(process.cwd(), this._packageDir);
-    private _localPackages: Array<string> = getDirectories(this._packagesDir);
+    private _packageDirectories: Array<string> = getDirectories(this._packagesDir);
     private _mainPackage: Package = this.getPackage(this._mainPackageName);
+    private _packageDependencies = {};
     private _graph;
     private get graph(): any {
         if (!this._graph) {
@@ -32,8 +36,7 @@ export default class Sln {
             while (notResolved.length > 0) {
                 const currentPackageName = notResolved.pop();
                 const retrievedPackage = this.getPackage(currentPackageName);
-                const packageDependencies = retrievedPackage.resolveDependencies(this._localPackages);
-                packageDependencies.forEach((dependentPackageName) => {
+                retrievedPackage.dependencies.forEach((dependentPackageName) => {
                     graph.add(currentPackageName, dependentPackageName);
                     if (resolved.indexOf(dependentPackageName) === -1) {
                         notResolved.push(dependentPackageName);
@@ -43,7 +46,7 @@ export default class Sln {
             }
 
             this._graph = graph;
-            console.log('order', graph.sort().reverse());
+            console.log('Dependency order\n - '+ graph.sort().reverse().join('\n - '));
         }
 
         return this._graph;
@@ -52,31 +55,107 @@ export default class Sln {
     private getPackage(name: string): Package {
         let retrievedPackage = this._packages[name];
         if (!retrievedPackage) {
-            retrievedPackage = new Package(this._packagesDir, name);
+            retrievedPackage = new Package(this._packagesDir, name, this._packageDirectories);
             this._packages[name] = retrievedPackage;
         }
         return retrievedPackage;
     }
 
-    run(action: string): Promise<any> {
-        var core = new Package(this._packagesDir, 'lib-core');
-        var pricing = new Package(this._packagesDir, 'lib-pricing');
-        return core.run(action)
-            .then(()=> {
-                console.log('complete core');
-                return pricing.run(action);
-            })
-    }
-    runOld(action: string): Promise<any> {
-        const promises = this.graph.sort().reverse()
-            .map(name => {
-                const packageName = name;
-                const packageToRun = this._packages[packageName];
-                return () => {
-                    console.log('running', packageName);
-                    return packageToRun.run(action);
-                }
+    private hasUncommitedChanges(): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            child.exec('git status -s', {
+                cwd: this._packageDir
+            }, (error, stdout, stderr) => {
+                if (error) return reject(error);
+                resolve(!!stdout);
             });
-        return async.series(promises);
+        });
+    }
+
+    private execute(action: (p: Package) => Promise<any>): Promise<any> {
+        return async.series(
+            this.graph.sort().reverse()
+                .map(name => {
+                    const packageName = name;
+                    const packageToRun = this._packages[packageName];
+                    const dependencies = this._packageDependencies[packageName]
+                    return () => {
+                        return action(packageToRun);
+                    }
+                })
+        );
+    }
+
+    run(action: string): Promise<any> {
+        return this.execute(p => {
+            return p.run(action);
+        });
+    }
+
+    install(): Promise<any> {
+        return this.execute(p => {
+            return p.install();
+        });
+    }
+
+    link(): Promise<any> {
+        return this.execute(p => {
+            return p.link();
+        });
+    }
+
+    unlink(): Promise<any> {
+        return this.execute(p => {
+            return p.unlink();
+        });
+    }
+
+    test(): Promise<any> {
+        return this.execute(p => {
+            return p.test();
+        });
+    }
+
+    version(release: string = 'patch', relativeToNpm: boolean = true): Promise<any> {
+        return this
+            .hasUncommitedChanges()
+            .then((hasUncommitedChanges) => {
+                if (false && hasUncommitedChanges) {
+                    return Promise.reject('Please commit changes before updating the version');
+                }
+            })
+            .then(() => {
+                const newVersions = {};
+                return this.execute(p => {
+                    return p.resolvePackageVersions(newVersions)
+                            .then((anyPackageVersionUpdated) => {
+                                if (anyPackageVersionUpdated ||
+                                    p.hasChanged()) {
+                                    return p.version(release, relativeToNpm)
+                                        .then(change => {
+                                            newVersions[change.fullName] = change.versionIs;
+                                        });
+                                } else {
+                                    return Promise.resolve();
+                                }
+                            })
+
+                });
+            })
+            .then(changes => {
+                console.log('changes',changes);
+                console.log('commiting now',changes);
+                // log changes and commit
+            });
+    }
+
+    publish(): Promise<any> {
+        return this.execute(p => {
+            return p.publish();
+        })
+    }
+
+    deploy(): Promise<any> {
+        return this._mainPackage.deploy('heyguevara-test1', '$CIRCLE_SHA1');
     }
 }

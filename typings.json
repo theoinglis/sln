@@ -1,7 +1,9 @@
 {
   "ambientDependencies": {
     "async": "github:DefinitelyTyped/DefinitelyTyped/async/async.d.ts#4de74cb527395c13ba20b438c3a7a419ad931f1c",
+    "inquirer": "github:DefinitelyTyped/DefinitelyTyped/inquirer/inquirer.d.ts#d5d918d4de0ea3634156e23d346e0eb567d007fb",
     "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#263705d313346e093d95cb62cef6fed848e46978",
-    "npm": "github:DefinitelyTyped/DefinitelyTyped/npm/npm.d.ts#93a9e8bb8e8a143abfe86be2bd29a07cdd722025"
+    "npm": "github:DefinitelyTyped/DefinitelyTyped/npm/npm.d.ts#93a9e8bb8e8a143abfe86be2bd29a07cdd722025",
+    "semver": "github:DefinitelyTyped/DefinitelyTyped/semver/semver.d.ts#0008781fb2a165a68d10b7f579330dcb4f6a1cb6"
   }
 }

@@ -15,8 +15,11 @@
     "async-q": "^0.3.1",
     "command-line-args": "^2.1.6",
     "fs": "0.0.2",
+    "inquirer": "^0.12.0",
+    "nodegit": "^0.11.2",
     "npm": "^3.7.3",
     "path": "^0.12.7",
+    "semver": "^5.1.0",
     "tsort": "0.0.1"
   },
   "devDependencies": {
