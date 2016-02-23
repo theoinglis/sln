@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "An npm local depedency manager",
   "scripts": {
-    "build": "tsc || exit 0"
+    "build": "tsc || exit 0",
+    "test": "exit 0"
   },
   "bin": {
     "sln": "bin/index.js"
