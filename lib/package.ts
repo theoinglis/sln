@@ -17,6 +17,7 @@ export default class Package implements INpmAction {
         public name: string,
         private _localPackages: Array<string> = []) {}
 
+    private _packageDirName: string = 'packages';
     private _packageDir: string = path.join(this.packagesDir, this.name);
     private _packageConfigPath: string = path.join(this._packageDir, 'package.json');
     private _packageConfig: any = require(this._packageConfigPath);
@@ -51,7 +52,7 @@ export default class Package implements INpmAction {
             encoding: 'utf-8'
         }).split('\n');
 
-        var name = path.join('packages', this.name); // this is gross, make configurable
+        var name = path.join(this._packageDirName, this.name);
         const hasChanged = files.some(fileName => {
             return fileName.indexOf(name) === 0;
         });
@@ -219,7 +220,7 @@ export default class Package implements INpmAction {
     }
 
     deploy(appName: string, fromBranch: string = 'HEAD'): Promise<any> {
-        child.execSync(`git subtree push -f --prefix ${this.packagesDirName}/${this.name} git@heroku.com:${appName}.git ${fromBranch}:master`, args, {
+        child.execSync(`git subtree push -f --prefix ${this._packageDirName}/${this.name} git@heroku.com:${appName}.git ${fromBranch}:master`, {
             stdio: 'inherit'
         });
         return Promise.resolve();
