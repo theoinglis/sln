@@ -15,6 +15,10 @@ function getDirectories(dir): Array<string> {
   });
 }
 
+export class Dependencies {
+    
+}
+
 export default class Sln implements INpmAction {
 
     constructor(
@@ -55,6 +59,7 @@ export default class Sln implements INpmAction {
     private getPackage(name: string): Package {
         let retrievedPackage = this._packages[name];
         if (!retrievedPackage) {
+            console.log('package name', name)
             retrievedPackage = new Package(this._packagesDir, name, this._packageDirectories);
             this._packages[name] = retrievedPackage;
         }
@@ -86,11 +91,21 @@ export default class Sln implements INpmAction {
         );
     }
 
-    run(action: string): Promise<any> {
-        return this.execute(p => {
-            return p.run(action);
-        });
+    static isLocalPackage(packageName: string): boolean {
+
     }
+
+    run(action: string, ...args: Array<string>): Promise<any> {
+        this.execute(p => {
+            return p[action](args);
+        })
+    }
+
+    // run(action: string): Promise<any> {
+    //     return this.execute(p => {
+    //         return p.run(action);
+    //     });
+    // }
 
     install(): Promise<any> {
         return this.execute(p => {

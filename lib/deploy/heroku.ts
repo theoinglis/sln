@@ -1,6 +1,7 @@
 /// <reference path="../../typings/main.d.ts" />
 
 import IDeploy = require('./IDeploy');
+const process = require('child-process-promise');
 
 export default class Heroku implements IDeploy {
 
@@ -9,9 +10,7 @@ export default class Heroku implements IDeploy {
         private _packageDirName: string
     ) {}
 
-    deploy(appName: string, fromBranch: string) {
-        child.execSync(`git subtree push -f --prefix ${this._packageDirName}/${this._packageName} git@heroku.com:${appName}.git ${fromBranch}:master`, {
-            stdio: 'inherit'
-        });
+    deploy(appName: string, fromBranch: string = 'HEAD'): Promise<any> {
+        return process.exec(`git subtree push --prefix ${this._packageDirName}/${this._packageName} git@heroku.com:${appName}.git ${fromBranch}:master`);
     }
 }
