@@ -10,7 +10,8 @@ export default class Heroku implements IDeploy {
         private _packageDirName: string
     ) {}
 
-    deploy(appName: string, fromBranch: string = 'HEAD'): Promise<any> {
-        return process.exec(`git subtree push --prefix ${this._packageDirName}/${this._packageName} git@heroku.com:${appName}.git ${fromBranch}:master`);
+    deploy(appName: string, fromBranch: string): Promise<any> {
+        fromBranch = fromBranch ? fromBranch + ':' : '';
+        return process.exec(`git subtree push --prefix ${this._packageDirName}/${this._packageName} git@heroku.com:${appName}.git ${fromBranch}master`);
     }
 }

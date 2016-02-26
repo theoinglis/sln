@@ -113,7 +113,7 @@ export default class Package implements INpmAction {
         return this._npmService.publishIfRequired(this.version);
     }
 
-    deploy(appName: string, fromBranch: string = 'HEAD'): Promise<any> {
+    deploy(appName: string, fromBranch: string): Promise<any> {
         return this._deployService.deploy(appName, fromBranch);
     }
 

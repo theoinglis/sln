@@ -66,7 +66,7 @@ export class SlnCli {
         ],
         deploy: [
             { name: 'app', alias: 'a', type: String, defaultOption: true },
-            { name: 'branch', alias: 'b', type: String, defaultValue: 'HEAD' }
+            { name: 'branch', alias: 'b', type: String }
         ]
     }
 }
