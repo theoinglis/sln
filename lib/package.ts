@@ -21,10 +21,10 @@ export default class Package implements INpmAction {
         private _localPackages: Array<string> = []
     ) {}
 
-    private _deployService = new Heroku(this.name, this._packageDirName);
     private _packageDirName: string = 'packages';
     private _relativeDir: string = path.join(this._packageDirName, this.name);
     private _packageDir: string = path.join(this.packagesDir, this.name);
+    private _deployService = new Heroku(this.name, this._packageDirName);
     private _packageConfig = new PackageConfig(this._packageDir);
     private _npmService = new Npm(this._packageConfig.fullName, this._packageDir);
     private _gitService = new Git(this._relativeDir);
