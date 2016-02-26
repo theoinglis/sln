@@ -23,17 +23,24 @@ export default class Package implements INpmAction {
 
     private _deployService = new Heroku(this.name, this._packageDirName);
     private _packageDirName: string = 'packages';
+    private _relativeDir: string = path.join(this._packageDirName, this.name);
     private _packageDir: string = path.join(this.packagesDir, this.name);
     private _packageConfig = new PackageConfig(this._packageDir);
     private _npmService = new Npm(this._packageConfig.fullName, this._packageDir);
-    private _gitService = new Git(this.name, this._packageDir);
+    private _gitService = new Git(this._relativeDir);
+
+    get fullName(): string {
+        return this._packageConfig.fullName;
+    }
+    get version(): string {
+        return this._packageConfig.version;
+    }
 
     private _dependencies;
     get dependencies(): Array<string> {
         if (!this._dependencies) {
             this._dependencies = this._packageConfig.dependencyIntersection(this._localPackages);
         }
-        console.log('depe', this._dependencies)
         return Object.keys(this._dependencies);
     }
 
@@ -73,16 +80,15 @@ export default class Package implements INpmAction {
         return this._npmService.test();
     }
 
-    resolvePackageVersions(packages: {}): Promise<boolean> {
+    resolvePackageVersions(packages: {}, shouldInquire: boolean = false): Promise<boolean> {
         let anyVersionUpdated = false;
         return async.series(
             Object.keys(packages)
                 .map(fullName => {
                     return () => {
-                        return this._packageConfig.resolvePackageVersion(fullName, packages[fullName])
+                        return this._packageConfig.resolvePackageVersion(fullName, packages[fullName], shouldInquire)
                             .then(updatedVersion => {
                                 if (!!updatedVersion) {
-                                    console.log(this.name, 'updated version', fullName, updatedVersion);
                                     anyVersionUpdated = true;
                                 }
                             });
@@ -94,12 +100,17 @@ export default class Package implements INpmAction {
             });
     }
 
-    version(release: string): Promise<any> {
-        return this._packageConfig.updateVersion(release);
+    updateVersion(release: string): any {
+        return {
+            fullName: this.fullName,
+            versionWas: this.version,
+            versionIs: this._packageConfig.updateVersion(release),
+            configPath: this._packageConfig.path
+        };
     }
 
     publish(): Promise<any> {
-        return this._npmService.publishIfRequired();
+        return this._npmService.publishIfRequired(this.version);
     }
 
     deploy(appName: string, fromBranch: string = 'HEAD'): Promise<any> {

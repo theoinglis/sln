@@ -9,8 +9,9 @@
         "noLib": false,
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
-        "outDir": "dist/"
+        "outDir": "./dist/"
     },
+   "compileOnSave": true,
 	"exclude": [
 		"node_modules",
 		"typings"

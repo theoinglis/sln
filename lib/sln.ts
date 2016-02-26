@@ -2,6 +2,7 @@
 
 import Package from './package';
 import INpmAction from './INpmAction';
+import Git from './git';
 
 const path = require('path'),
     fs = require('fs'),
@@ -15,16 +16,13 @@ function getDirectories(dir): Array<string> {
   });
 }
 
-export class Dependencies {
-    
-}
-
 export default class Sln implements INpmAction {
 
     constructor(
         private _mainPackageName: string = '',
         private _packageDir: string = 'packages') {}
 
+    private _gitService = new Git();
     private _packages: any = {};
     private _packagesDir: string = path.join(process.cwd(), this._packageDir);
     private _packageDirectories: Array<string> = getDirectories(this._packagesDir);
@@ -59,22 +57,10 @@ export default class Sln implements INpmAction {
     private getPackage(name: string): Package {
         let retrievedPackage = this._packages[name];
         if (!retrievedPackage) {
-            console.log('package name', name)
             retrievedPackage = new Package(this._packagesDir, name, this._packageDirectories);
             this._packages[name] = retrievedPackage;
         }
         return retrievedPackage;
-    }
-
-    private hasUncommitedChanges(): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            child.exec('git status -s', {
-                cwd: this._packageDir
-            }, (error, stdout, stderr) => {
-                if (error) return reject(error);
-                resolve(!!stdout);
-            });
-        });
     }
 
     private execute(action: (p: Package) => Promise<any>): Promise<any> {
@@ -92,85 +78,73 @@ export default class Sln implements INpmAction {
     }
 
     static isLocalPackage(packageName: string): boolean {
-
+        return false;
     }
 
-    run(action: string, ...args: Array<string>): Promise<any> {
-        this.execute(p => {
-            return p[action](args);
-        })
+    filterDependencies(predicate: (packageToCheck: Package) => boolean): Array<Package> {
+        return this.graph.sort().reverse()
+            .filter(predicate);
     }
 
-    // run(action: string): Promise<any> {
-    //     return this.execute(p => {
-    //         return p.run(action);
-    //     });
-    // }
-
-    install(): Promise<any> {
-        return this.execute(p => {
-            return p.install();
-        });
-    }
-
-    link(): Promise<any> {
-        return this.execute(p => {
-            return p.link();
-        });
-    }
-
-    unlink(): Promise<any> {
-        return this.execute(p => {
-            return p.unlink();
-        });
-    }
-
-    test(): Promise<any> {
-        return this.execute(p => {
-            return p.test();
-        });
-    }
-
-    version(release: string = 'patch', relativeToNpm: boolean = true): Promise<any> {
-        return this
-            .hasUncommitedChanges()
-            .then((hasUncommitedChanges) => {
-                if (false && hasUncommitedChanges) {
-                    return Promise.reject('Please commit changes before updating the version');
-                }
-            })
-            .then(() => {
-                const newVersions = {};
-                return this.execute(p => {
-                    return p.resolvePackageVersions(newVersions)
-                            .then((anyPackageVersionUpdated) => {
-                                if (anyPackageVersionUpdated ||
-                                    p.hasChanged()) {
-                                    return p.version(release, relativeToNpm)
-                                        .then(change => {
-                                            newVersions[change.fullName] = change.versionIs;
-                                        });
-                                } else {
-                                    return Promise.resolve();
-                                }
-                            })
-
-                });
-            })
-            .then(changes => {
-                console.log('changes',changes);
-                console.log('commiting now',changes);
-                // log changes and commit
+    run(action: string, options): Promise<any> {
+        var customFn = this[action];
+        if (customFn) {
+            return customFn.call(this, options);
+        } else {
+            return this.execute(p => {
+                return p[action](options);
             });
+        }
     }
 
-    publish(): Promise<any> {
+    private _linkFilters = { // Not working yet
+        changed: p =>  p.hasUnpushedChanges(),
+        all: p => true,
+        single: p => p === this._mainPackage
+    }
+    link(options): Promise<any> {
         return this.execute(p => {
-            return p.publish();
-        })
+            console.log('could link',p.name);
+            if (this._linkFilters[options.set](p)) {
+                console.log('linking',p.name);
+                return p.link();
+            } else {
+                return Promise.resolve();
+            }
+        });
     }
 
-    deploy(): Promise<any> {
-        return this._mainPackage.deploy('heyguevara-test1', '$CIRCLE_SHA1');
+    version(options): Promise<any> {
+        if (this._gitService.hasUncommitedChanges()) {
+            return Promise.reject('Please commit changes before updating the version');
+        } else {
+            const newVersions = {};
+            return this.execute(p => {
+                return p.resolvePackageVersions(newVersions, options.inquire)
+                        .then((anyPackageVersionUpdated) => {
+                            if (anyPackageVersionUpdated ||
+                                p.hasUnpushedChanges()) {
+                                const change = p.updateVersion(options.release);
+                                newVersions[change.fullName] = change.versionIs;
+                                return change;
+                            } else return false
+                        });
+
+                })
+                .then(changes => {
+                    changes = changes.filter(c => !!c);
+                    const packageChanges =
+                        changes
+                            .map(change => {
+                                return `${change.fullName} (${change.versionWas} -> ${change.versionIs})`
+                            });
+                    this._gitService.add(changes.map(c => c.configPath));
+                    this._gitService.commit(`Updated package versions: ${packageChanges.join(', ')}`);
+                });
+        }
+    }
+
+    deploy(options): Promise<any> {
+        return this._mainPackage.deploy(options.release, options.branch);
     }
 }

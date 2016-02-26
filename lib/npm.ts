@@ -4,7 +4,7 @@ import semver = require('semver');
 
 const path = require('path');
 const processPromise = require('child-process-promise');
-const process = require('child_process');
+const processSync = require('child_process');
 
 export default class Npm {
 
@@ -33,7 +33,7 @@ export default class Npm {
     }
 
     unlink(packageName: string): Promise<any> {
-        return this.spawn(['install', packageName]);
+        return this.spawn(['install', packageName, '-f']);
     }
 
     test(): Promise<any> {
@@ -42,7 +42,7 @@ export default class Npm {
 
     isPublished(): boolean {
         try {
-            process.execSync(`npm view ${this._name} version`, {
+            processSync.execSync(`npm view ${this._name} version`, {
                 stdio: 'ignore'
             });
             return true;
@@ -52,10 +52,10 @@ export default class Npm {
     }
 
     isVersionPublished(version: string): boolean {
-        const publishedVersion = process.execSync(`npm view ${this._name}@${version} version`, {
+        const publishedVersion = processSync.execSync(`npm view ${this._name}@${version} version`, {
             encoding: 'utf-8'
         }).trim();
-        return semver.valid(publishedVersion);
+        return semver.valid(publishedVersion) !== null;
     }
 
     publish(): Promise<any> {
