@@ -62,10 +62,21 @@ export default class Npm {
         return this.spawn(['publish']);
     }
 
-    publishIfRequired(version: string): Promise<any> {
+    addTag(version, tag): Promise<any> {
+        return this.spawn(['dist-tag', 'add', `${this._name}@${version}`, tag]);
+    }
+
+    publishIfRequired(version: string, tag?: string): Promise<any> {
         if (this.isPublished() &&
             !this.isVersionPublished(version)) {
-            return this.publish();
+            var publishPromise = this.publish();
+            if (tag) {
+                publishPromise
+                    .then(() => {
+                        return this.addTag(version, tag)
+                    });
+            }
+            return publishPromise;
         } else {
             return Promise.resolve();
         }

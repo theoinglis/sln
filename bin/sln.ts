@@ -62,7 +62,7 @@ export class SlnCli {
             { name: 'inquire', alias: 'i', type: Boolean, defaultValue: false }
         ],
         publish: [
-            { name: 'tag', alias: 't', type: String, defaultOption: true }
+            { name: 'tag', alias: 't', type: String }
         ],
         exec: [
             { name: 'command', alias: 'c', type: String, defaultOption: true }

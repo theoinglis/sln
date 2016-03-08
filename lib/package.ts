@@ -54,8 +54,11 @@ export default class Package implements INpmAction {
         return this._npmService.run(action);
     }
 
-    exec(command: string): Promise<any> {
-        return processPromise.exec(command, {
+    exec(fullCommand: string): Promise<any> {
+        const args = fullCommand.split(' ');
+        const command = args.shift();
+        return processPromise.spawn(command, args, {
+            stdio: 'inherit',
             cwd: this._packageDir
         });
     }
@@ -115,8 +118,8 @@ export default class Package implements INpmAction {
         };
     }
 
-    publish(): Promise<any> {
-        return this._npmService.publishIfRequired(this.version);
+    publish(options: any): Promise<any> {
+        return this._npmService.publishIfRequired(this.version, options.tag);
     }
 
     deploy(appName: string, fromBranch: string): Promise<any> {
