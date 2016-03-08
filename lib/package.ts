@@ -9,7 +9,7 @@ import Npm from './npm';
 import Heroku from './deploy/heroku';
 
 const path = require('path'),
-    child = require('child_process'),
+    processPromise = require('child-process-promise'),
     fs = require('fs'),
     async = require('async-q');
 
@@ -52,6 +52,12 @@ export default class Package implements INpmAction {
 
     run(action: string): Promise<any> {
         return this._npmService.run(action);
+    }
+
+    exec(command: string): Promise<any> {
+        return processPromise.exec(command, {
+            cwd: this._packageDir
+        });
     }
 
     install(): Promise<any> {

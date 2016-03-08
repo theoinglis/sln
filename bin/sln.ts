@@ -64,6 +64,9 @@ export class SlnCli {
         publish: [
             { name: 'tag', alias: 't', type: String, defaultOption: true }
         ],
+        exec: [
+            { name: 'command', alias: 'c', type: String, defaultOption: true }
+        ],
         deploy: [
             { name: 'app', alias: 'a', type: String, defaultOption: true },
             { name: 'branch', alias: 'b', type: String }

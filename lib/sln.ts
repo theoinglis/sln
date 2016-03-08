@@ -144,6 +144,10 @@ export default class Sln implements INpmAction {
         }
     }
 
+    exec(options): Promise<any> {
+        return this._mainPackage.exec(options.command);
+    }
+
     deploy(options): Promise<any> {
         return this._mainPackage.deploy(options.app, options.branch);
     }
