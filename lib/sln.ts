@@ -1,4 +1,5 @@
 /// <reference path="../typings/main.d.ts" />
+import config = require('./config/config');
 
 import {Predicate} from './common/types';
 import Package from './package';
@@ -22,8 +23,8 @@ export default class Sln implements INpmAction {
     private _dependencies: Dependencies;
 
     constructor(
-        mainPackageName: string = '',
-        packageDir: string = 'packages') {
+        mainPackageName: string,
+        packageDir: string = config.packagesDir) {
         this._dependencies = new Dependencies(mainPackageName, packageDir);
     }
 
@@ -37,7 +38,11 @@ export default class Sln implements INpmAction {
         return this._filters[name] || this._filters.all;
     }
 
-    private execute(filter: Predicate<Package>, action: (p: Package, no?: number) => Promise<any>): Promise<any> {
+    private execute(
+        action: (p: Package, no?: number) => Promise<any>,
+        filter: Predicate<Package> = this._filters.all)
+            : Promise<any>
+    {
         return this._dependencies
             .forEach(filter, (packageToRun, no) => {
                 charm.write('Processing ' + packageToRun.name + '\n');
@@ -52,19 +57,17 @@ export default class Sln implements INpmAction {
         const customFn = this[action];
         const filter = this.getFilter(filterName);
         if (customFn) {
-            return customFn.call(this, filter, options);
+            return customFn.call(this, options, filter);
         } else {
-            return this.execute(filter, p => {
+            return this.execute(p => {
                 return p[action](options);
-            });
+            }, filter);
         }
     }
 
     linkDependencies(options): Promise<any> {
         return this.execute(p => {
-            console.log('could link',p.name);
             if (this._linkFilters[options.set](p)) {
-                console.log('linking',p.name);
                 return p.link();
             } else {
                 return Promise.resolve();
@@ -102,24 +105,24 @@ export default class Sln implements INpmAction {
         }
     }
 
-    exec(filter: Predicate<Package>, options): Promise<any> {
+    exec(options, filter: Predicate<Package> = this._filters.single): Promise<any> {
         return this.execute(filter, (p) => {
             return p.exec(options.command);
         });
     }
 
-    deploy(filter: string, options): Promise<any> {
-        return this._dependencies.filter().deploy(options.app, options.branch);
+    deploy(options, filter: Predicate<Package> = this._filters.single): Promise<any> {
+        return this._dependencies.filter(filter).deploy(options.app, options.branch);
     }
 
     summary(): Promise<any> {
         const statuses = [];
         const toEmoji = (isTrue: boolean, falseEmoji: string = null): string {
-            if (falseEmoji) falseEmoji = emoji.get(falseEmoji);
+            if (falseEmoji) falseEmoji = emoji.emojify(falseEmoji);
             else falseEmoji = '';
-            if (isTrue === true) return emoji.get('white_check_mark')
+            if (isTrue === true) return emoji.emojify(config.output.success)
             else if (isTrue === false) return falseEmoji;
-            else return '';
+            else return emoji.emojify(config.output.none);
         }
         return this.execute(this._filters.all, (p, no) => {
             const status = p.status;
@@ -127,9 +130,9 @@ export default class Sln implements INpmAction {
                 '': no + 1,
                 'Name': status.name,
                 'Version': status.currentVersion,
-                'Modified ': '   '+toEmoji(status.isModified),
-                'Linked   ': '   '+toEmoji(status.isLinked, 'negative_squared_cross_mark'),
-                'Published': '   '+toEmoji(status.isPublished, 'negative_squared_cross_mark'),
+                'Modified ': toEmoji(status.isModified),
+                'Linked   ': toEmoji(status.isLinked, config.output.fail),
+                'Published': toEmoji(status.isPublished, config.output.fail),
             });
         }).then(() => {
             console.table(statuses.reverse());
