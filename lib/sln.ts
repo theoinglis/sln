@@ -1,5 +1,6 @@
 /// <reference path="../typings/main.d.ts" />
 
+import {Predicate} from './common/types';
 import Package from './package';
 import INpmAction from './INpmAction';
 import Git from './git';
@@ -15,8 +16,10 @@ const
 charm.pipe(process.stdout);
 charm.reset();
 
-
 export default class Sln implements INpmAction {
+
+    private _gitService = new Git();
+    private _dependencies: Dependencies;
 
     constructor(
         mainPackageName: string = '',
@@ -24,46 +27,40 @@ export default class Sln implements INpmAction {
         this._dependencies = new Dependencies(mainPackageName, packageDir);
     }
 
-    private _gitService = new Git();
-    private _dependencies: Dependencies;
-
-    private execute(action: (p: Package, no?: number) => Promise<any>): Promise<any> {
-        return async.series(
-            this._dependencies.all
-                .map((name, no) => {
-                    const packageToRun = this._dependencies.getPackage(name);
-                    return () => {
-                        charm.write('Processing ' + packageToRun.name + '\n');
-                        return action(packageToRun, no);
-                    }
-                })
-        ).then(() => {
-            charm.write('Processing complete.\n\n')
-        });
+    private _filters: any = {
+        'all': new Predicate<Package>(() => {return true;}),
+        'unpushed': new Predicate<Package>((p) => {return p.hasUnpushedChanges();}),
+        'single': new Predicate<Package>((p) => {return p === this._dependencies.main;})
     }
 
-    static isLocalPackage(packageName: string): boolean {
-        return false;
+    private getFilter(name: string): Predicate<Package> {
+        return this._filters[name] || this._filters.all;
     }
 
-    run(action: string, options): Promise<any> {
-        var customFn = this[action];
-        console.log('Dependency order\n - '+ this._dependencies.all.join('\n - ')+'\n');
+    private execute(filter: Predicate<Package>, action: (p: Package, no?: number) => Promise<any>): Promise<any> {
+        return this._dependencies
+            .forEach(filter, (packageToRun, no) => {
+                charm.write('Processing ' + packageToRun.name + '\n');
+                return action(packageToRun, no);
+            })
+            .then(() => {
+                charm.write('Processing complete.\n\n')
+            });
+    }
+
+    run(action: string, filterName: string, options): Promise<any> {
+        const customFn = this[action];
+        const filter = this.getFilter(filterName);
         if (customFn) {
-            return customFn.call(this, options);
+            return customFn.call(this, filter, options);
         } else {
-            return this.execute(p => {
+            return this.execute(filter, p => {
                 return p[action](options);
             });
         }
     }
 
-    private _linkFilters = { // Not working yet
-        changed: p =>  p.hasUnpushedChanges(),
-        all: p => true,
-        single: p => p === this._dependencies.main
-    }
-    link(options): Promise<any> {
+    linkDependencies(options): Promise<any> {
         return this.execute(p => {
             console.log('could link',p.name);
             if (this._linkFilters[options.set](p)) {
@@ -75,7 +72,7 @@ export default class Sln implements INpmAction {
         });
     }
 
-    version(options): Promise<any> {
+    versionDependencies(options): Promise<any> {
         if (this._gitService.hasUncommitedChanges()) {
             return Promise.reject('Please commit changes before updating the version');
         } else {
@@ -105,12 +102,14 @@ export default class Sln implements INpmAction {
         }
     }
 
-    exec(options): Promise<any> {
-        return this._dependencies.main.exec(options.command);
+    exec(filter: Predicate<Package>, options): Promise<any> {
+        return this.execute(filter, (p) => {
+            return p.exec(options.command);
+        });
     }
 
-    deploy(options): Promise<any> {
-        return this._dependencies.main.deploy(options.app, options.branch);
+    deploy(filter: string, options): Promise<any> {
+        return this._dependencies.filter().deploy(options.app, options.branch);
     }
 
     summary(): Promise<any> {
@@ -122,7 +121,7 @@ export default class Sln implements INpmAction {
             else if (isTrue === false) return falseEmoji;
             else return '';
         }
-        return this.execute((p, no) => {
+        return this.execute(this._filters.all, (p, no) => {
             const status = p.status;
             statuses.push({
                 '': no + 1,
