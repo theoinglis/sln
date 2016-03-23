@@ -3,78 +3,35 @@
 import Package from './package';
 import INpmAction from './INpmAction';
 import Git from './git';
+import Dependencies from './dependencies';
 
 require('console.table');
-const path = require('path'),
-    fs = require('fs'),
+const
     async = require('async-q'),
     child = require('child_process'),
-    tsort = require('tsort'),
     emoji = require('node-emoji'),
     charm = require('charm')();
 
 charm.pipe(process.stdout);
 charm.reset();
 
-function getDirectories(dir): Array<string> {
-  return fs.readdirSync(dir).filter(function(file) {
-    return fs.statSync(path.join(dir, file)).isDirectory();
-  });
-}
 
 export default class Sln implements INpmAction {
 
     constructor(
-        private _mainPackageName: string = '',
-        private _packageDir: string = 'packages') {}
+        mainPackageName: string = '',
+        packageDir: string = 'packages') {
+        this._dependencies = new Dependencies(mainPackageName, packageDir);
+    }
 
     private _gitService = new Git();
-    private _packages: any = {};
-    private _packagesDir: string = path.join(process.cwd(), this._packageDir);
-    private _packageDirectories: Array<string> = getDirectories(this._packagesDir);
-    private _mainPackage: Package = this.getPackage(this._mainPackageName);
-    private _packageDependencies = {};
-    private _graph;
-    private get graph(): any {
-        if (!this._graph) {
-            const graph = tsort();
-            const notResolved: Array<string> = [this._mainPackageName];
-            const resolved: Array<string> = [];
-
-            while (notResolved.length > 0) {
-                const currentPackageName = notResolved.pop();
-                const retrievedPackage = this.getPackage(currentPackageName);
-                retrievedPackage.dependencies.forEach((dependentPackageName) => {
-                    graph.add(currentPackageName, dependentPackageName);
-                    if (resolved.indexOf(dependentPackageName) === -1) {
-                        notResolved.push(dependentPackageName);
-                    }
-                });
-                resolved.push(currentPackageName);
-            }
-
-            this._graph = graph;
-        }
-
-        return this._graph;
-    }
-
-    private getPackage(name: string): Package {
-        let retrievedPackage = this._packages[name];
-        if (!retrievedPackage) {
-            retrievedPackage = new Package(this._packagesDir, name, this._packageDirectories);
-            this._packages[name] = retrievedPackage;
-        }
-        return retrievedPackage;
-    }
+    private _dependencies: Dependencies;
 
     private execute(action: (p: Package, no?: number) => Promise<any>): Promise<any> {
         return async.series(
-            this.graph.sort().reverse()
+            this._dependencies.all
                 .map((name, no) => {
-                    const packageName = name;
-                    const packageToRun = this._packages[packageName];
-                    const dependencies = this._packageDependencies[packageName]
+                    const packageToRun = this._dependencies.getPackage(name);
                     return () => {
                         charm.write('Processing ' + packageToRun.name + '\n');
                         return action(packageToRun, no);
@@ -89,14 +46,9 @@ export default class Sln implements INpmAction {
         return false;
     }
 
-    filterDependencies(predicate: (packageToCheck: Package) => boolean): Array<Package> {
-        return this.graph.sort().reverse()
-            .filter(predicate);
-    }
-
     run(action: string, options): Promise<any> {
         var customFn = this[action];
-        console.log('Dependency order\n - '+ this.graph.sort().reverse().join('\n - ')+'\n');
+        console.log('Dependency order\n - '+ this._dependencies.all.join('\n - ')+'\n');
         if (customFn) {
             return customFn.call(this, options);
         } else {
@@ -109,7 +61,7 @@ export default class Sln implements INpmAction {
     private _linkFilters = { // Not working yet
         changed: p =>  p.hasUnpushedChanges(),
         all: p => true,
-        single: p => p === this._mainPackage
+        single: p => p === this._dependencies.main
     }
     link(options): Promise<any> {
         return this.execute(p => {
@@ -154,11 +106,11 @@ export default class Sln implements INpmAction {
     }
 
     exec(options): Promise<any> {
-        return this._mainPackage.exec(options.command);
+        return this._dependencies.main.exec(options.command);
     }
 
     deploy(options): Promise<any> {
-        return this._mainPackage.deploy(options.app, options.branch);
+        return this._dependencies.main.deploy(options.app, options.branch);
     }
 
     summary(): Promise<any> {
