@@ -1,6 +1,6 @@
 {
   "name": "sln",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "An npm local depedency manager",
   "scripts": {
     "build": "tsc || exit 0",
