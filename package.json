@@ -14,10 +14,13 @@
   "dependencies": {
     "async": "^1.5.2",
     "async-q": "^0.3.1",
+    "charm": "^1.0.0",
     "child-process-promise": "^1.1.0",
     "command-line-args": "^2.1.6",
+    "console.table": "^0.4.0",
     "fs": "0.0.2",
     "inquirer": "^0.12.0",
+    "node-emoji": "^1.2.1",
     "nodegit": "^0.11.2",
     "npm": "^3.7.3",
     "path": "^0.12.7",

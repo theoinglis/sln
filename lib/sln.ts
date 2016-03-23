@@ -4,11 +4,17 @@ import Package from './package';
 import INpmAction from './INpmAction';
 import Git from './git';
 
+require('console.table');
 const path = require('path'),
     fs = require('fs'),
     async = require('async-q'),
     child = require('child_process'),
-    tsort = require('tsort');
+    tsort = require('tsort'),
+    emoji = require('node-emoji'),
+    charm = require('charm')();
+
+charm.pipe(process.stdout);
+charm.reset();
 
 function getDirectories(dir): Array<string> {
   return fs.readdirSync(dir).filter(function(file) {
@@ -48,7 +54,6 @@ export default class Sln implements INpmAction {
             }
 
             this._graph = graph;
-            console.log('Dependency order\n - '+ graph.sort().reverse().join('\n - '));
         }
 
         return this._graph;
@@ -63,18 +68,21 @@ export default class Sln implements INpmAction {
         return retrievedPackage;
     }
 
-    private execute(action: (p: Package) => Promise<any>): Promise<any> {
+    private execute(action: (p: Package, no?: number) => Promise<any>): Promise<any> {
         return async.series(
             this.graph.sort().reverse()
-                .map(name => {
+                .map((name, no) => {
                     const packageName = name;
                     const packageToRun = this._packages[packageName];
                     const dependencies = this._packageDependencies[packageName]
                     return () => {
-                        return action(packageToRun);
+                        charm.write('Processing ' + packageToRun.name + '\n');
+                        return action(packageToRun, no);
                     }
                 })
-        );
+        ).then(() => {
+            charm.write('Processing complete.\n\n')
+        });
     }
 
     static isLocalPackage(packageName: string): boolean {
@@ -88,6 +96,7 @@ export default class Sln implements INpmAction {
 
     run(action: string, options): Promise<any> {
         var customFn = this[action];
+        console.log('Dependency order\n - '+ this.graph.sort().reverse().join('\n - ')+'\n');
         if (customFn) {
             return customFn.call(this, options);
         } else {
@@ -150,5 +159,29 @@ export default class Sln implements INpmAction {
 
     deploy(options): Promise<any> {
         return this._mainPackage.deploy(options.app, options.branch);
+    }
+
+    summary(): Promise<any> {
+        const statuses = [];
+        const toEmoji = (isTrue: boolean, falseEmoji: string = null): string {
+            if (falseEmoji) falseEmoji = emoji.get(falseEmoji);
+            else falseEmoji = '';
+            if (isTrue === true) return emoji.get('white_check_mark')
+            else if (isTrue === false) return falseEmoji;
+            else return '';
+        }
+        return this.execute((p, no) => {
+            const status = p.status;
+            statuses.push({
+                '': no + 1,
+                'Name': status.name,
+                'Version': status.currentVersion,
+                'Modified ': '   '+toEmoji(status.isModified),
+                'Linked   ': '   '+toEmoji(status.isLinked, 'negative_squared_cross_mark'),
+                'Published': '   '+toEmoji(status.isPublished, 'negative_squared_cross_mark'),
+            });
+        }).then(() => {
+            console.table(statuses.reverse());
+        });
     }
 }

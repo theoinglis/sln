@@ -11,6 +11,7 @@ const config = {
 const args = process.argv.slice(2);
 const packageName = args.shift();
 const action = args.shift();
+
 // const options = require('command-line-args')([
 //     { name: 'command', type: String, multiple: true, defaultOption: true }
 // ]).parse();
@@ -48,6 +49,9 @@ export class SlnCli {
     }
 
     private cliConfigs = {
+        summary: [
+
+        ],
         install: [
             { name: 'tag', alias: 't', type: String, defaultOption: true }
         ],

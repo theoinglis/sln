@@ -13,6 +13,36 @@ const path = require('path'),
     fs = require('fs'),
     async = require('async-q');
 
+export class PackageStatus {
+    constructor(
+        public name: string,
+        packageConfig?: PackageConfig,
+        git?: Git,
+        npm?: Npm) {
+        this.refreshStatus(packageConfig, git, npm);
+    }
+
+    public refreshStatus(packageConfig: PackageConfig, git: Git, npm: Npm) {
+        this.currentVersion = packageConfig.version;
+        this.isModified = git.hasUnpushedChanges();
+        this.isLinked = true;
+        this.isPublished =
+            npm.isPublished() ?
+            npm.isVersionPublished(packageConfig.version) ?
+                true :
+                false :
+                null;
+    }
+
+    public currentVersion: string;
+    public publishedVersion: string;
+
+    public isModified: boolean;
+    public isLinked: boolean;
+    public isPublished: boolean;
+    public isDeployed: boolean;
+}
+
 export default class Package implements INpmAction {
 
     constructor(
@@ -29,6 +59,13 @@ export default class Package implements INpmAction {
     private _npmService = new Npm(this._packageConfig.fullName, this._packageDir);
     private _gitService = new Git(this._relativeDir);
 
+
+    get status(): PackageStatus {
+        const status = new PackageStatus(this.name, this._packageConfig, this._gitService, this._npmService);
+        status.isLinked = this.isLinked();
+        return status;
+    }
+
     get fullName(): string {
         return this._packageConfig.fullName;
     }
@@ -44,10 +81,25 @@ export default class Package implements INpmAction {
         return Object.keys(this._dependencies);
     }
 
+    isLinked(): boolean {
+        let isLinked = null;
+        this.dependencies
+            .forEach(dependency => {
+                const isPackageLinked = this.isPackageLinked('@guevara/'+dependency);
+                if (isLinked === null) isLinked = isPackageLinked;
+                if (!isPackageLinked) isLinked = false;
+            });
+        return isLinked;
+    }
+
     isPackageLinked(packageToCheck: string): boolean {
         const packagePath = path.join(this._packageDir, 'node_modules', packageToCheck);
-        const folderStats = fs.lstatSync(packagePath);
-        return folderStats.isSymbolicLink();
+        try {
+            const folderStats = fs.lstatSync(packagePath);
+            return folderStats.isSymbolicLink();
+        } catch(e) {
+            return null;
+        }
     }
 
     run(action: string): Promise<any> {
