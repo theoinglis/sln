@@ -30,12 +30,12 @@ export default class Sln implements INpmAction {
 
     private _filters: any = {
         'all': new Predicate<Package>(() => {return true;}),
-        'unpushed': new Predicate<Package>((p) => {return p.hasUnpushedChanges();}),
+        'modified': new Predicate<Package>((p) => {return p.hasUnpushedChanges();}),
         'single': new Predicate<Package>((p) => {return p === this._dependencies.main;})
     }
 
     private getFilter(name: string): Predicate<Package> {
-        return this._filters[name] || this._filters.all;
+        return this._filters[name];
     }
 
     private execute(
@@ -55,24 +55,28 @@ export default class Sln implements INpmAction {
 
     run(action: string, filterName: string, options): Promise<any> {
         const customFn = this[action];
-        const filter = this.getFilter(filterName);
         if (customFn) {
+            const filter = this.getFilter(filterName);
             return customFn.call(this, options, filter);
-        } else {
-            return this.execute(p => {
-                return p[action](options);
-            }, filter);
         }
     }
 
-    linkDependencies(options): Promise<any> {
+    npm(options, filter: Predicate<Package> = this._filters.all): Promise<any> {
         return this.execute(p => {
-            if (this._linkFilters[options.set](p)) {
-                return p.link();
-            } else {
-                return Promise.resolve();
-            }
-        });
+            return p.npm(options.command);
+        }, filter);
+    }
+
+    linkDependencies(options, filter: Predicate<Package> = this._filters.all): Promise<any> {
+        return this.execute(p => {
+            return p.linkDependencies();
+        }, filter);
+    }
+
+    unlinkDependencies(options, filter: Predicate<Package> = this._filters.all): Promise<any> {
+        return this.execute(p => {
+            return p.unlinkDependencies();
+        }, filter);
     }
 
     versionDependencies(options): Promise<any> {
@@ -124,7 +128,7 @@ export default class Sln implements INpmAction {
             else if (isTrue === false) return falseEmoji;
             else return emoji.emojify(config.output.none);
         }
-        return this.execute(this._filters.all, (p, no) => {
+        return this.execute((p, no) => {
             const status = p.status;
             statuses.push({
                 '': no + 1,
@@ -134,7 +138,7 @@ export default class Sln implements INpmAction {
                 'Linked   ': toEmoji(status.isLinked, config.output.fail),
                 'Published': toEmoji(status.isPublished, config.output.fail),
             });
-        }).then(() => {
+        }, this._filters.all).then(() => {
             console.table(statuses.reverse());
         });
     }

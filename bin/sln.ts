@@ -4,53 +4,65 @@ import Sln from '../lib/sln';
 const path = require('path'),
     cla = require('command-line-args');
 
-const config = {
-    folder: 'packages'
-};
-
-const args = process.argv.slice(2);
-const packageName = args.shift();
-const action = args.shift();
-
-// const options = require('command-line-args')([
-//     { name: 'command', type: String, multiple: true, defaultOption: true }
-// ]).parse();
-//
-// const packageName = options.command.shift();
-// const action = options.command.shift();
-
 const cliArray = (options: Array<string>): ((option: string) => string) => {
     return (option: string) => {
         if(options.indexOf(option) >= 0) {
             return option;
         } else {
-            throw new Error(`Unregonised argument ${option}.\nOptions are: ${options.join(', ')}`);
+            throw new Error(`Unrecognised argument ${option}.\nOptions are: ${options.join(', ')}`);
         }
     }
 }
 
 
 export class SlnCli {
-    private _sln = new Sln(this._packageName);
+    public filter:string = undefined;
+
+    private _action: string;
+    public get action(): string {
+        return this._action;
+    }
+    public set action(text: string) {
+        this._action = this.toCamel(text);
+    }
     constructor(
         private _args = process.argv.slice(2),
-        private _packageName = _args.shift(),
-        private _action = _args.shift()
-    ) {}
+        public packageName = _args.shift()
+    ) {
+        console.log('dln',packageName)
+        const filter = _args.shift();
+        if (this._filterOptions.indexOf(filter) === -1) {
+            this.action = filter;
+        } else {
+            this.filter = filter;
+            this.action = _args.shift();
+        }
+    }
+    private _sln = new Sln(this.packageName);
 
-    run(): Promise<any> {
-        console.info('Running', this._action, 'on', this._packageName, '...');
-        return this._sln.run(this._action, this._options);
+    private toCamel(text: string) {
+        return text.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase(); })
+    }
+
+    private _filterOptions = [
+        'single',
+        'modified',
+        'all'
+    ]
+
+    public run(): Promise<any> {
+        console.log(this._options);
+        return this._sln.run(this.action, this.filter, this._options);
     }
 
     private get _options(): any {
-        const cliConfig = this.cliConfigs[this._action] || [];
+        const cliConfig = this.cliConfigs[this.action] || this.cliConfigs.default;
         return cla(cliConfig).parse(this._args);
     }
 
     private cliConfigs = {
-        summary: [
-
+        default: [
+            { name: 'command', alias: 't', type: String, defaultOption: true, multiple: true }
         ],
         install: [
             { name: 'tag', alias: 't', type: String, defaultOption: true }
@@ -68,9 +80,6 @@ export class SlnCli {
         publish: [
             { name: 'tag', alias: 't', type: String }
         ],
-        exec: [
-            { name: 'command', alias: 'c', type: String, defaultOption: true }
-        ],
         deploy: [
             { name: 'app', alias: 'a', type: String, defaultOption: true },
             { name: 'branch', alias: 'b', type: String }
@@ -78,11 +87,12 @@ export class SlnCli {
     }
 }
 var slnCli = new SlnCli();
+console.info('Running', slnCli.action, 'on', slnCli.packageName, '...');
 slnCli.run()
     .then(() => {
-        console.info(action, 'executed successfully');
+        console.info(slnCli.action, 'executed successfully');
     })
     .catch((err) => {
-        console.error('Failed to run', action, err);
+        console.error('Failed to run', slnCli.action, err);
         process.exit(1);
     })

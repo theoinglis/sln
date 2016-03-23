@@ -93,7 +93,7 @@ export default class Package implements INpmAction {
     }
 
     isPackageLinked(packageToCheck: string): boolean {
-        const packagePath = path.join(this._packageDir, 'node_modules', packageToCheck);
+        const packagePath = path.join(this._packageDir, 'node_modules/@guevara', packageToCheck);
         try {
             const folderStats = fs.lstatSync(packagePath);
             return folderStats.isSymbolicLink();
@@ -115,30 +115,32 @@ export default class Package implements INpmAction {
         });
     }
 
-    install(): Promise<any> {
-        return this._npmService.install();
-    }
-
-    link(): Promise<any> {
+    linkDependencies(): Promise<any> {
         return Promise.all(
             this.dependencies
+                .filter(dependency => {
+                    return !this.isPackageLinked(dependency);
+                })
                 .map(dependency => {
                     return this._npmService.link(dependency);
                 })
         );
     }
 
-    unlink(): Promise<any> {
+    unlinkDependencies(): Promise<any> {
         return Promise.all(
             this.dependencies
+                .filter(dependency => {
+                    return this.isPackageLinked(dependency);
+                })
                 .map(dependency => {
                     return this._npmService.unlink(this._dependencies[dependency]);
                 })
         );
     }
 
-    test(): Promise<any> {
-        return this._npmService.test();
+    npm(options): Promise<any> {
+        return this._npmService.spawn(options);
     }
 
     resolvePackageVersions(packages: {}, shouldInquire: boolean = false): Promise<boolean> {

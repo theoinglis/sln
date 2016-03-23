@@ -13,7 +13,7 @@ export default class Npm {
         private _workingDirectory: string = process.cwd()
     ) {}
 
-    private spawn(args): Promise<any> {
+    spawn(args): Promise<any> {
         return processPromise.spawn('npm', args, {
             stdio: 'inherit',
             cwd: this._workingDirectory,
