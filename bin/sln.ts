@@ -29,7 +29,6 @@ export class SlnCli {
         private _args = process.argv.slice(2),
         public packageName = _args.shift()
     ) {
-        console.log('dln',packageName)
         const filter = _args.shift();
         if (this._filterOptions.indexOf(filter) === -1) {
             this.action = filter;
@@ -51,7 +50,6 @@ export class SlnCli {
     ]
 
     public run(): Promise<any> {
-        console.log(this._options);
         return this._sln.run(this.action, this.filter, this._options);
     }
 
@@ -67,13 +65,7 @@ export class SlnCli {
         install: [
             { name: 'tag', alias: 't', type: String, defaultOption: true }
         ],
-        link: [
-            { name: 'set', alias: 's', type: cliArray(['single', 'changed', 'all']), defaultOption: true, defaultValue: 'changed' }
-        ],
-        unlink: [
-            { name: 'set', alias: 's', type: cliArray(['single', 'changed', 'all']), defaultOption: true, defaultValue: 'changed' }
-        ],
-        version: [
+        versionDependencies: [
             { name: 'release', alias: 'r', type: String, defaultOption: true, defaultValue: 'patch' },
             { name: 'inquire', alias: 'i', type: Boolean, defaultValue: false }
         ],

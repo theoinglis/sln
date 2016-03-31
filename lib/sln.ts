@@ -91,12 +91,15 @@ export default class Sln implements INpmAction {
                                 p.hasUnpushedChanges()) {
                                 const change = p.updateVersion(options.release);
                                 newVersions[change.fullName] = change.versionIs;
+                                console.log(change)
                                 return change;
                             } else return false
                         });
 
                 })
                 .then(changes => {
+                    console.log(newVersions);
+                    console.log(changes);
                     changes = changes.filter(c => !!c);
                     const packageChanges =
                         changes

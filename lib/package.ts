@@ -86,6 +86,7 @@ export default class Package implements INpmAction {
         this.dependencies
             .forEach(dependency => {
                 const isPackageLinked = this.isPackageLinked('@guevara/'+dependency);
+                console.log('is linked?',this.name, isPackageLinked, dependency)
                 if (isLinked === null) isLinked = isPackageLinked;
                 if (!isPackageLinked) isLinked = false;
             });
@@ -93,7 +94,7 @@ export default class Package implements INpmAction {
     }
 
     isPackageLinked(packageToCheck: string): boolean {
-        const packagePath = path.join(this._packageDir, 'node_modules/@guevara', packageToCheck);
+        const packagePath = path.join(this._packageDir, 'node_modules', packageToCheck);
         try {
             const folderStats = fs.lstatSync(packagePath);
             return folderStats.isSymbolicLink();

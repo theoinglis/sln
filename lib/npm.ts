@@ -29,6 +29,7 @@ export default class Npm {
     }
 
     link(packageName: string, relativePath: string = '..'): Promise<any> {
+        console.log('linking ',path.join(relativePath, packageName))
         return this.spawn(['link', path.join(relativePath, packageName)]);
     }
 
