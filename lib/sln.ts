@@ -55,6 +55,7 @@ export default class Sln implements INpmAction {
     }
 
     run(action: string, options, filterName: string): Promise<any> {
+        console.log('action',action, options)
         const customFn = this[action];
         const filter = this.getFilter(filterName);
         if (customFn) {
@@ -66,7 +67,13 @@ export default class Sln implements INpmAction {
 
     npm(options, filter: Predicate<Package> = this._filters.all): Promise<any> {
         return this.execute(p => {
-            return p.npm(options.command);
+            return p.npm(options);
+        }, filter);
+    }
+
+    publishIfRequired(options, filter: Predicate<Package> = this._filters.all): Promise<any> {
+        return this.execute(p => {
+            return p.publishIfRequired();
         }, filter);
     }
 

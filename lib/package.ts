@@ -100,7 +100,7 @@ export default class Package implements INpmAction {
         let isLinked = null;
         this.dependencies
             .forEach(dependency => {
-                const isPackageLinked = this.isPackageLinked('@guevara/'+dependency);
+                const isPackageLinked = this.isPackageLinked(dependency);
                 if (isLinked === null) isLinked = isPackageLinked;
                 if (!isPackageLinked) isLinked = false;
             });
@@ -108,7 +108,7 @@ export default class Package implements INpmAction {
     }
 
     isPackageLinked(packageToCheck: string): boolean {
-        const packagePath = path.join(this._packagesAbsoluteDir, 'node_modules', packageToCheck);
+        const packagePath = path.join(this._packageAbsoluteDir, 'node_modules/@guevara', packageToCheck);
         try {
             const folderStats = fs.lstatSync(packagePath);
             return folderStats.isSymbolicLink();
@@ -126,7 +126,7 @@ export default class Package implements INpmAction {
         const command = args.shift();
         return processPromise.spawn(command, args, {
             stdio: 'inherit',
-            cwd: this._packageDir
+            cwd: this._packageAbsoluteDir
         });
     }
 

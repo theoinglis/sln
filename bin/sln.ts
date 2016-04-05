@@ -54,23 +54,21 @@ export class SlnCli {
     }
 
     private get _options(): any {
-        const cliConfig = this.cliConfigs[this.action] || this.cliConfigs.default;
-        return cla(cliConfig).parse(this._args);
+        const cliConfig = this.cliConfigs[this.action];
+        if (cliConfig) {
+            return cla(cliConfig).parse(this._args);
+        } else {
+            return this._args;
+        }
     }
 
     private cliConfigs = {
         default: [
             { name: 'command', alias: 't', type: String, defaultOption: true, multiple: true }
         ],
-        install: [
-            { name: 'tag', alias: 't', type: String, defaultOption: true }
-        ],
         versionDependencies: [
             { name: 'release', alias: 'r', type: String, defaultOption: true, defaultValue: 'patch' },
             { name: 'inquire', alias: 'i', type: Boolean, defaultValue: false }
-        ],
-        publish: [
-            { name: 'tag', alias: 't', type: String }
         ],
         deploy: [
             { name: 'app', alias: 'a', type: String, defaultOption: true },
