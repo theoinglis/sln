@@ -49,9 +49,7 @@ export default class Package implements INpmAction {
     constructor(
         private _name: string,
         private _localPackages: Array<string> = []
-    ) {
-        console.log('packages name', _name);
-    }
+    ) {}
 
     private _packagesRelativeDir: string = config.path.packages;
     private _packagesAbsoluteDir: string = path.join(config.path.root, this._packagesRelativeDir);
@@ -103,7 +101,6 @@ export default class Package implements INpmAction {
         this.dependencies
             .forEach(dependency => {
                 const isPackageLinked = this.isPackageLinked('@guevara/'+dependency);
-                console.log('is linked?',this.name, isPackageLinked, dependency)
                 if (isLinked === null) isLinked = isPackageLinked;
                 if (!isPackageLinked) isLinked = false;
             });
@@ -111,7 +108,7 @@ export default class Package implements INpmAction {
     }
 
     isPackageLinked(packageToCheck: string): boolean {
-        const packagePath = path.join(this._packageDir, 'node_modules', packageToCheck);
+        const packagePath = path.join(this._packagesAbsoluteDir, 'node_modules', packageToCheck);
         try {
             const folderStats = fs.lstatSync(packagePath);
             return folderStats.isSymbolicLink();

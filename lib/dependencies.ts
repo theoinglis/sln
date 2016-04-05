@@ -1,5 +1,6 @@
 /// <reference path="../typings/main.d.ts" />
 
+import config = require('./config/config');
 import {Predicate} from './common/types';
 import Package from './package';
 
@@ -13,8 +14,9 @@ export default class Dependencies {
 
     private _graph;
     private _packages: any = {};
-    private _packagesDir: string = path.join(process.cwd(), this._packageDir);
-    private _packageDirectories: Array<string> = this.getDirectories(this._packagesDir);
+    private _packagesRelativeDir: string = config.path.packages;
+    private _packagesAbsoluteDir: string = path.join(config.path.root, this._packagesRelativeDir);
+    private _packageDirectories: Array<string> = this.getDirectories(this._packagesAbsoluteDir);
 
     constructor(
         mainPackageName: string,

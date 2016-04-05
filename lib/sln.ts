@@ -49,8 +49,8 @@ export default class Sln implements INpmAction {
                 return action(packageToRun, no);
             })
             .then(result => {
-                console.log('execute result', result);
-                charm.write('Processing complete.\n\n')
+                charm.write('Processing complete.\n\n');
+                return result;
             });
     }
 
