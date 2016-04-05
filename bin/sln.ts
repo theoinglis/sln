@@ -50,7 +50,7 @@ export class SlnCli {
     ]
 
     public run(): Promise<any> {
-        return this._sln.run(this.action, this.filter, this._options);
+        return this._sln.run(this.action, this._options, this.filter);
     }
 
     private get _options(): any {
