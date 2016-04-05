@@ -2,24 +2,22 @@
 
 import semver = require('semver');
 import inquirer = require('inquirer');
+import Services from './services';
 
-const path = require('path'),
-    processPromise = require('child-process-promise'),
-    processSync = require('child_process'),
-    Git = require('nodegit'),
-    fs = require('fs'),
-    async = require('async-q');
+const path = require('path');
 
 export default class git {
+
+    public services = new Services();
 
     constructor(
         private _relativeDirectory: string = '.',
         private _workingDirectory: string = process.cwd()
     ) {}
 
-    hasUncommitedChanges(): boolean {
-        var result = processSync.execSync('git status -s', {
-            cwd: this._workingDirectory,
+    hasUncommitedChanges(relativePath: string = this._workingDirectory): boolean {
+        var result = this.services.processSync.execSync('git status -s', {
+            cwd: relativePath,
             encoding: 'utf-8'
         });
 
@@ -27,7 +25,7 @@ export default class git {
     }
 
     hasUnpushedChanges(): boolean {
-        const files = processSync.execSync('git diff origin/master --name-only', {
+        const files = this.services.processSync.execSync('git diff origin/master --name-only', {
             cwd: this._workingDirectory,
             encoding: 'utf-8'
         }).split('\n');
@@ -40,14 +38,14 @@ export default class git {
     }
 
     add(files: Array<string>): void {
-        processSync.execSync(`git add ${files.join(' ')}`, {
+        this.services.processSync.execSync(`git add ${files.join(' ')}`, {
             cwd: this._workingDirectory,
             encoding: 'utf-8'
         });
     }
 
     commit(message: string) {
-        processSync.execSync(`git commit -m '${message}'`, {
+        this.services.processSync.execSync(`git commit -m '${message}'`, {
             cwd: this._workingDirectory,
             encoding: 'utf-8'
         });

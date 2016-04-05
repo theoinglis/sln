@@ -1,5 +1,6 @@
 /// <reference path="../typings/main.d.ts" />
 
+import config = require('./config/config');
 import INpmAction = require('./INpmAction');
 import semver = require('semver');
 import inquirer = require('inquirer');
@@ -46,31 +47,47 @@ export class PackageStatus {
 export default class Package implements INpmAction {
 
     constructor(
-        public packagesDir: string,
-        public name: string,
+        private _name: string,
         private _localPackages: Array<string> = []
-    ) {}
+    ) {
+        console.log('packages name', _name);
+    }
 
-    private _packageDirName: string = 'packages';
-    private _relativeDir: string = path.join(this._packageDirName, this.name);
-    private _packageDir: string = path.join(this.packagesDir, this.name);
-    private _deployService = new Heroku(this.name, this._packageDirName);
-    private _packageConfig = new PackageConfig(this._packageDir);
-    private _npmService = new Npm(this._packageConfig.fullName, this._packageDir);
-    private _gitService = new Git(this._relativeDir);
+    private _packagesRelativeDir: string = config.path.packages;
+    private _packagesAbsoluteDir: string = path.join(config.path.root, this._packagesRelativeDir);
+    private _packageRelativeDir: string = path.join(this._packagesRelativeDir, this.name);
+    private _packageAbsoluteDir: string = path.join(this._packagesAbsoluteDir, this.name);
+    private _packageConfig = new PackageConfig(this._packageAbsoluteDir);
+    public get packageConfig(): PackageConfig {
+        return this._packageConfig;
+    }
+
+    public get name(): string {
+        return this._name
+    }
+    public get fullName(): string {
+        return this._packageConfig.fullName;
+    }
+    public get version(): string {
+        return this._packageConfig.version;
+    }
+
+    private _deployService = new Heroku(this.name, this._packagesRelativeDir);
+    private _npmService = new Npm(this.fullName, this._packageAbsoluteDir);
+    private _gitService = new Git(this._packageRelativeDir);
+    public get services() {
+        return {
+            deploy: this._deployService,
+            npm: this._npmService,
+            git: this._gitService,
+        }
+    }
 
 
     get status(): PackageStatus {
         const status = new PackageStatus(this.name, this._packageConfig, this._gitService, this._npmService);
         status.isLinked = this.isLinked();
         return status;
-    }
-
-    get fullName(): string {
-        return this._packageConfig.fullName;
-    }
-    get version(): string {
-        return this._packageConfig.version;
     }
 
     private _dependencies;

@@ -1,9 +1,17 @@
 export = {
-    'packagesDir': {
-        'doc': 'The relative directory the packages are stored in.',
-        'format': String,
-        'default': 'packages',
-        'env': 'SLN_PACKAGES_DIR'
+    'path': {
+        'root': {
+            'doc': 'The absoulte path of the root folder.',
+            'format': String,
+            'default': '',
+            'env': 'SLN_PATH_ROOT'
+        },
+        'packages': {
+            'doc': 'The relative directory the packages are stored in.',
+            'format': String,
+            'default': 'packages',
+            'env': 'SLN_PATH_PACKAGES'
+        }
     },
     'output': {
         'success': {

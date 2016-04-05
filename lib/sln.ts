@@ -48,7 +48,8 @@ export default class Sln implements INpmAction {
                 charm.write('Processing ' + packageToRun.name + '\n');
                 return action(packageToRun, no);
             })
-            .then(() => {
+            .then(result => {
+                console.log('execute result', result);
                 charm.write('Processing complete.\n\n')
             });
     }
@@ -91,7 +92,6 @@ export default class Sln implements INpmAction {
                                 p.hasUnpushedChanges()) {
                                 const change = p.updateVersion(options.release);
                                 newVersions[change.fullName] = change.versionIs;
-                                console.log(change)
                                 return change;
                             } else return false
                         });

@@ -3,8 +3,13 @@
   "version": "1.0.8",
   "description": "An npm local depedency manager",
   "scripts": {
-    "build": "tsc || exit 0",
-    "test": "exit 0"
+    "build:compile": "tsc || exit 0",
+    "build": "npm run build:compile",
+    "test": "mocha 'dist/test/**/*.test.js' --reporter $npm_package_config_reporter",
+    "test:watch": "npm run test -- --watch --bail"
+  },
+  "config": {
+    "reporter": "spec"
   },
   "bin": {
     "sln": "bin/index.js"
@@ -29,6 +34,9 @@
     "tsort": "0.0.1"
   },
   "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.4.5",
+    "sinon": "^1.17.3",
     "tsc": "^1.20150623.0",
     "typings": "^0.6.8"
   }

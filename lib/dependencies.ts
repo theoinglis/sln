@@ -54,7 +54,7 @@ export default class Dependencies {
     public getPackage(name: string): Package {
         let retrievedPackage = this._packages[name];
         if (!retrievedPackage) {
-            retrievedPackage = new Package(this._packagesDir, name, this._packageDirectories);
+            retrievedPackage = new Package(name, this._packageDirectories);
             this._packages[name] = retrievedPackage;
         }
         return retrievedPackage;

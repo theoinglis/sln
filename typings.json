@@ -5,5 +5,10 @@
     "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#263705d313346e093d95cb62cef6fed848e46978",
     "npm": "github:DefinitelyTyped/DefinitelyTyped/npm/npm.d.ts#93a9e8bb8e8a143abfe86be2bd29a07cdd722025",
     "semver": "github:DefinitelyTyped/DefinitelyTyped/semver/semver.d.ts#0008781fb2a165a68d10b7f579330dcb4f6a1cb6"
+  },
+  "ambientDevDependencies": {
+    "chai": "github:DefinitelyTyped/DefinitelyTyped/chai/chai.d.ts#7de6c3dd94feaeb21f20054b9f30d5dabc5efabd",
+    "mocha": "github:DefinitelyTyped/DefinitelyTyped/mocha/mocha.d.ts#7de6c3dd94feaeb21f20054b9f30d5dabc5efabd",
+    "sinon": "github:DefinitelyTyped/DefinitelyTyped/sinon/sinon.d.ts#7de6c3dd94feaeb21f20054b9f30d5dabc5efabd"
   }
 }
