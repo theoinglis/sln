@@ -1,6 +1,6 @@
 {
   "name": "sln",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "An npm local depedency manager",
   "scripts": {
     "postinstall": "npm run build",
