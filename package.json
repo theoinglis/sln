@@ -3,6 +3,7 @@
   "version": "1.0.9",
   "description": "An npm local depedency manager",
   "scripts": {
+    "postinstall": "npm run build",
     "build:compile": "tsc || exit 0",
     "build": "npm run build:compile",
     "test": "mocha 'dist/test/**/*.test.js' --reporter $npm_package_config_reporter",
