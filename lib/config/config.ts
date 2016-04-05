@@ -15,6 +15,6 @@ try {
 } catch(e) {
     console.log('No custom config loaded from', customConfigPath)
 }
-console.log(config.getProperties());
+
 config.validate({strict: true});
 export = config.getProperties();

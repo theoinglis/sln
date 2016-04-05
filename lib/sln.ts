@@ -54,11 +54,13 @@ export default class Sln implements INpmAction {
             });
     }
 
-    run(action: string, filterName: string, options): Promise<any> {
+    run(action: string, options, filterName: string): Promise<any> {
         const customFn = this[action];
+        const filter = this.getFilter(filterName);
         if (customFn) {
-            const filter = this.getFilter(filterName);
             return customFn.call(this, options, filter);
+        } else {
+            return this.npm(options, filter);
         }
     }
 
