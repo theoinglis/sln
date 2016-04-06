@@ -70,6 +70,9 @@ export class SlnCli {
             { name: 'release', alias: 'r', type: String, defaultOption: true, defaultValue: 'patch' },
             { name: 'inquire', alias: 'i', type: Boolean, defaultValue: false }
         ],
+        publishIfRequired: [
+            { name: 'tag', alias: 't', type: String }
+        ],
         deploy: [
             { name: 'app', alias: 'a', type: String, defaultOption: true },
             { name: 'branch', alias: 'b', type: String }

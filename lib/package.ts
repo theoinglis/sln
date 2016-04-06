@@ -187,8 +187,8 @@ export default class Package implements INpmAction {
         };
     }
 
-    publishIfRequired(options: any): Promise<any> {
-        return this._npmService.publishIfRequired(this.version, options.tag);
+    publishIfRequired(tag?: string): Promise<any> {
+        return this._npmService.publishIfRequired(this.version, tag);
     }
 
     deploy(appName: string, fromBranch: string): Promise<any> {

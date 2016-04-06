@@ -73,7 +73,7 @@ export default class Sln implements INpmAction {
 
     publishIfRequired(options, filter: Predicate<Package> = this._filters.all): Promise<any> {
         return this.execute(p => {
-            return p.publishIfRequired();
+            return p.publishIfRequired(options.tag);
         }, filter);
     }
 
