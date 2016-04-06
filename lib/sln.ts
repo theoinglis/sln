@@ -122,13 +122,13 @@ export default class Sln implements INpmAction {
     }
 
     exec(options, filter: Predicate<Package> = this._filters.single): Promise<any> {
-        return this.execute(filter, (p) => {
+        return this.execute((p) => {
             return p.exec(options.command);
-        });
+        }, filter);
     }
 
-    deploy(options, filter: Predicate<Package> = this._filters.single): Promise<any> {
-        return this._dependencies.filter(filter).deploy(options.app, options.branch);
+    deploy(options): Promise<any> {
+        return this._dependencies.main.deploy(options.app, options.branch);
     }
 
     summary(): Promise<any> {
