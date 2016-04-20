@@ -68,8 +68,13 @@ export default class Npm {
     }
 
     publishIfRequired(version: string, tag?: string): Promise<any> {
-        if (this.isPublished() &&
-            !this.isVersionPublished(version)) {
+        if (!this.isPublished()) {
+            console.warn(`${this._name} has no package to publish to.`);
+            return Promise.resolve();
+        } else if (this.isVersionPublished(version)) {
+            console.warn(`${this._name} ${version} has already been published.`);
+            return Promise.resolve();
+        } else {
             var publishPromise = this.publish();
             if (tag) {
                 publishPromise
@@ -78,8 +83,6 @@ export default class Npm {
                     });
             }
             return publishPromise;
-        } else {
-            return Promise.resolve();
         }
     }
 }
